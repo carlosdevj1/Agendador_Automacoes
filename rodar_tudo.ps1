@@ -7,20 +7,18 @@ $msg = "[$(Get-Date)] ==================================="
 Write-Host $msg
 $msg | Out-File $log -Append -Encoding ASCII
 
-# Evita conflito: aguarda execucao anterior terminar
-$timeout = Get-Date
-while (Get-Process python -ErrorAction SilentlyContinue) {
-    if ((Get-Date) - $timeout -gt [TimeSpan]::FromMinutes(30)) {
-        $msg = "[$(Get-Date)] Timeout aguardando execucao anterior - forcando"
-        Write-Host $msg
-        $msg | Out-File $log -Append -Encoding ASCII
-        break
-    }
-    $msg = "[$(Get-Date)] Aguardando execucao anterior terminar..."
+# Mata processos zumbis que consomem RAM (causa HRESULT 8007000e)
+$zumbis = Get-Process -Name "chrome","chromium","msedge","python" -ErrorAction SilentlyContinue
+if ($zumbis) {
+    $msg = "[$(Get-Date)] Matando $($zumbis.Count) processos zumbis..."
     Write-Host $msg
     $msg | Out-File $log -Append -Encoding ASCII
-    Start-Sleep -Seconds 30
+    $zumbis | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 5
 }
+
+# Aguarda liberacao de RAM
+Start-Sleep -Seconds 5
 
 function Executar-Projeto {
     param($nome, $pasta)
@@ -35,6 +33,9 @@ function Executar-Projeto {
     $msg = "[$(Get-Date)] $nome finalizado"
     Write-Host $msg
     $msg | Out-File $log -Append -Encoding ASCII
+
+    # Pausa entre projetos para liberar recursos
+    Start-Sleep -Seconds 10
 }
 
 Executar-Projeto "Lancamento Debitos" "C:\Users\carlo\OneDrive\Documentos\Claude\Projects\automacao_autodespa\Autodespa-Kaizencrm\lancamento_debitos"
