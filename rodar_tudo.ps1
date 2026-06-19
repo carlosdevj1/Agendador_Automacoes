@@ -7,13 +7,22 @@ $msg = "[$(Get-Date)] ==================================="
 Write-Host $msg
 $msg | Out-File $log -Append -Encoding ASCII
 
-# Mata processos zumbis que consomem RAM (causa HRESULT 8007000e)
-$zumbis = Get-Process -Name "chrome","chromium","msedge","python" -ErrorAction SilentlyContinue
-if ($zumbis) {
-    $msg = "[$(Get-Date)] Matando $($zumbis.Count) processos zumbis..."
+# Mata APENAS processos Playwright (identificados pelo argumento --remote-debugging-pipe)
+# Nunca fecha o navegador pessoal do usuario
+$zumbis = Get-WmiObject Win32_Process -Filter "Name='chrome.exe' OR Name='msedge.exe' OR Name='chromium.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -match "remote-debugging-pipe|playwright" } |
+    ForEach-Object { Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+
+$pythonZumbis = Get-WmiObject Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -match "playwright|autodespa|kaizencrm" } |
+    ForEach-Object { Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+
+$todosZumbis = @($zumbis) + @($pythonZumbis) | Where-Object { $_ -ne $null }
+if ($todosZumbis.Count -gt 0) {
+    $msg = "[$(Get-Date)] Matando $($todosZumbis.Count) processos Playwright zumbis..."
     Write-Host $msg
     $msg | Out-File $log -Append -Encoding ASCII
-    $zumbis | Stop-Process -Force -ErrorAction SilentlyContinue
+    $todosZumbis | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 5
 }
 
