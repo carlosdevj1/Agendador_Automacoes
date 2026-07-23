@@ -47,9 +47,9 @@ function Executar-Projeto {
     Start-Sleep -Seconds 10
 }
 
-Executar-Projeto "Lancamento Debitos" "C:\Users\carlo\OneDrive\Documentos\Claude\Projects\automacao_autodespa\Autodespa-Kaizencrm\lancamento_debitos"
-Executar-Projeto "Anexa Documentos"  "C:\Users\carlo\OneDrive\Documentos\Claude\Projects\automacao_autodespa\Autodespa-Kaizencrm\anexa_documentos"
-Executar-Projeto "Atualiza Tarefas"  "C:\Users\carlo\OneDrive\Documentos\Claude\Projects\automacao_autodespa\Autodespa-Kaizencrm\atualiza_tarefas"
+Executar-Projeto "Lancamento Debitos" "C:\DokLine\Autodespa-Kaizencrm\lancamento_debitos"
+Executar-Projeto "Anexa Documentos"  "C:\DokLine\Autodespa-Kaizencrm\anexa_documentos"
+Executar-Projeto "Atualiza Tarefas"  "C:\DokLine\Autodespa-Kaizencrm\atualiza_tarefas"
 
 $msg = "[$(Get-Date)] ==================================="
 Write-Host $msg
