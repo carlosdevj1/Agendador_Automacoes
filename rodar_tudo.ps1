@@ -1,11 +1,16 @@
 $python = "C:\Users\carlo\OneDrive\Documentos\Python\teste_email\venv\Scripts\python.exe"
-$log = "C:\automacao\logs\rodar_tudo.log"
+$dia = Get-Date -Format "yyyyMMdd"
+$log = "C:\automacao\logs\automacao_$dia.log"
 
 New-Item -ItemType Directory -Force -Path "C:\automacao\logs" | Out-Null
 
-$msg = "[$(Get-Date)] ==================================="
-Write-Host $msg
-$msg | Out-File $log -Append -Encoding ASCII
+function Escrever-Log {
+    param([string]$msg)
+    Write-Host $msg
+    $msg | Out-File $log -Append -Encoding utf8
+}
+
+Escrever-Log "[$(Get-Date)] ==================================="
 
 # Mata APENAS processos Playwright (identificados pelo argumento --remote-debugging-pipe)
 # Nunca fecha o navegador pessoal do usuario
@@ -19,9 +24,7 @@ $pythonZumbis = Get-WmiObject Win32_Process -Filter "Name='python.exe'" -ErrorAc
 
 $todosZumbis = @($zumbis) + @($pythonZumbis) | Where-Object { $_ -ne $null }
 if ($todosZumbis.Count -gt 0) {
-    $msg = "[$(Get-Date)] Matando $($todosZumbis.Count) processos Playwright zumbis..."
-    Write-Host $msg
-    $msg | Out-File $log -Append -Encoding ASCII
+    Escrever-Log "[$(Get-Date)] Matando $($todosZumbis.Count) processos Playwright zumbis..."
     $todosZumbis | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 5
 }
@@ -31,17 +34,13 @@ Start-Sleep -Seconds 5
 
 function Executar-Projeto {
     param($nome, $pasta)
-    $msg = "[$(Get-Date)] Iniciando $nome"
-    Write-Host $msg
-    $msg | Out-File $log -Append -Encoding ASCII
+    Escrever-Log "[$(Get-Date)] ===== Iniciando $nome ====="
 
     Set-Location -LiteralPath $pasta
-    $saida = & $python main.py 2>&1
-    $saida | Out-File $log -Append -Encoding ASCII
+    # As 3 automacoes gravam direto no log unificado diario (automacao_YYYYMMDD.log)
+    & $python main.py 2>&1 | Out-Null
 
-    $msg = "[$(Get-Date)] $nome finalizado"
-    Write-Host $msg
-    $msg | Out-File $log -Append -Encoding ASCII
+    Escrever-Log "[$(Get-Date)] ===== $nome finalizado ====="
 
     # Pausa entre projetos para liberar recursos
     Start-Sleep -Seconds 10
@@ -51,6 +50,4 @@ Executar-Projeto "Lancamento Debitos" "C:\DokLine\Autodespa-Kaizencrm\lancamento
 Executar-Projeto "Anexa Documentos"  "C:\DokLine\Autodespa-Kaizencrm\anexa_documentos"
 Executar-Projeto "Atualiza Tarefas"  "C:\DokLine\Autodespa-Kaizencrm\atualiza_tarefas"
 
-$msg = "[$(Get-Date)] ==================================="
-Write-Host $msg
-$msg | Out-File $log -Append -Encoding ASCII
+Escrever-Log "[$(Get-Date)] ==================================="
