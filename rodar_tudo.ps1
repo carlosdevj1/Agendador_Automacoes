@@ -12,6 +12,18 @@ function Escrever-Log {
 
 Escrever-Log "[$(Get-Date)] ==================================="
 
+# ── Lock de instancia unica ─────────────────────────────────────────────
+# Impede que duas instancias do orquestrador rodem em paralelo (evita corrida
+# nos checkpoints e duplicacao de lancamentos/anexos).
+$lockFile = "C:\automacao\rodar_tudo.lock"
+try {
+    $lockHandle = [System.IO.File]::Open($lockFile, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+    Escrever-Log "[$(Get-Date)] Lock adquirido."
+} catch {
+    Escrever-Log "[$(Get-Date)] Outra instancia do orquestrador ja esta em execucao. Abortando."
+    exit 0
+}
+
 # Mata APENAS processos Playwright (identificados pelo argumento --remote-debugging-pipe)
 # Nunca fecha o navegador pessoal do usuario
 $zumbis = Get-WmiObject Win32_Process -Filter "Name='chrome.exe' OR Name='msedge.exe' OR Name='chromium.exe'" -ErrorAction SilentlyContinue |
@@ -51,3 +63,9 @@ Executar-Projeto "Anexa Documentos"  "C:\DokLine\Autodespa-Kaizencrm\anexa_docum
 Executar-Projeto "Atualiza Tarefas"  "C:\DokLine\Autodespa-Kaizencrm\atualiza_tarefas"
 
 Escrever-Log "[$(Get-Date)] ==================================="
+
+# ── Libera o lock ───────────────────────────────────────────────────────
+if ($lockHandle -ne $null) {
+    $lockHandle.Close()
+    Remove-Item -LiteralPath $lockFile -Force -ErrorAction SilentlyContinue
+}
